@@ -1,0 +1,206 @@
+use span::{Loc, Spanned};
+use ast::{*, ExprKind::*, ConstKind::*, BinOpKind::*, IBinOpKind::*, BBinOpKind::*, FBinOpKind::*, UnOpKind::*, LetKind::*};
+use crate::lex::{Error as LexError, Tok};
+use ordered_float::NotNan;
+
+grammar<'input>;
+extern {
+    type Location = Loc;
+    type Error = Spanned<LexError<'input>>;
+
+    enum Tok<'input> {
+        "(" => Tok::LPar,
+        ")" => Tok::RPar,
+        "not" => Tok::Not,
+        Bool => Tok::Bool(<bool>),
+        Int => Tok::Int(<i32>),
+        Float => Tok::Float(<f32>),
+        Ident => Tok::Ident(<&'input str>),
+        "-" => Tok::Hyphen,
+        "+" => Tok::Plus,
+        "*" => Tok::Ast,
+        "/" => Tok::Slash,
+        "-." => Tok::HyphenDot,
+        "+." => Tok::PlusDot,
+        "*." => Tok::AstDot,
+        "/." => Tok::SlashDot,
+        "=" => Tok::Equal,
+        "<>" => Tok::LessGreater,
+        "<=" => Tok::LessEqual,
+        ">=" => Tok::GreaterEqual,
+        "<" => Tok::Less,
+        ">" => Tok::Greater,
+        "if" => Tok::If,
+        "then" => Tok::Then,
+        "else" => Tok::Else,
+        "let" => Tok::Let,
+        "in" => Tok::In,
+        "rec" => Tok::Rec,
+        "," => Tok::Comma,
+        "Array.make" => Tok::ArrayMake,
+        "." => Tok::Dot,
+        "<-" => Tok::LessHyphen,
+        ";" => Tok::Semi,
+    }
+}
+
+TermOp: BinOpKind = {
+    "+" => IBinOp(Add),
+    "-" => IBinOp(Sub),
+    "+." => FBinOp(FAdd),
+    "-." => FBinOp(FSub)
+};
+
+FactorOp: BinOpKind = {
+    "*" => IBinOp(Mul),
+    "/" => IBinOp(Div),
+    "*." => FBinOp(FMul),
+    "/." => FBinOp(FDiv)
+};
+
+BooleanBinOp: BinOpKind = {
+    "=" => BBinOp(Eq),
+    "<=" => BBinOp(Le),
+    ">=" => BBinOp(Ge),
+    "<>" => BBinOp(Ne),
+    "<" => BBinOp(Lt),
+    ">" => BBinOp(Gt)
+};
+
+Literal: Expr<'input> = {
+    <l:@L> "(" ")" <r:@R> => wrap(Const(Unit), (l, r)),
+    <l:@L> <x:Bool> <r:@R> => wrap(Const(Bool(x)), (l, r)),
+    <l:@L> <x:Int> <r:@R> => wrap(Const(Int(x)), (l, r)),
+    <l:@L> <x:Float> <r:@R> => wrap(Const(Float(NotNan::new(x).unwrap())), (l, r)),
+}
+
+SimpleExpr: Expr<'input> = {
+    "(" <x:Expr> ")" => x,
+    <l:@L> "(" <e:Elems> ")" <r:@R>
+        => wrap(Tuple(e), (l, r)),
+    Literal,
+    <l:@L> <x:Ident> <r:@R> => wrap(Var(Typed::new(x)), (l, r)),
+    <l:@L> <s:SimpleExpr> "." "(" <x:Expr> ")" <r:@R> => wrap(Get(Box::new(s), Box::new(x)), (l, r)),
+}
+
+AboveIf: Expr<'input> = {
+    #[precedence(level="0")]
+    SimpleExpr,
+
+    // (a b)
+    #[precedence(level="1")]
+    <l:@L> <e1:SimpleExpr> <e2:ActualArgs> <r:@R>
+        => wrap(App(Box::new(e1), e2), (l, r)),
+    <l:@L> "Array.make" <e1:SimpleExpr> <e2:AboveIf> <r:@R>
+        => wrap(ArrayMake(Box::new(e1), Box::new(e2)), (l, r)),
+    <l:@L> "not" <e1:SimpleExpr> <r:@R>
+        => wrap(UnOp(Not, Box::new(e1)), (l, r)),
+
+    // -
+    #[precedence(level="2")]
+    <l:@L> "-" <e1:AboveIf> <r:@R>
+        => wrap(UnOp(Neg, Box::new(e1)), (l, r)),
+
+    // -.
+    <l:@L> "-." <e1:AboveIf> <r:@R>
+        => wrap(UnOp(FNeg, Box::new(e1)), (l, r)),
+
+    // * *. /.
+    #[precedence(level="3")]
+    #[assoc(side="left")]
+    <l:@L> <e1:AboveIf> <op:FactorOp> <e2:AboveIf> <r:@R>
+        => wrap(BinOp(op, Box::new(e1), Box::new(e2)), (l, r)),
+
+    // + - +. -.
+    #[precedence(level="4")]
+    #[assoc(side="left")]
+    <l:@L> <e1:AboveIf> <op:TermOp> <e2:AboveIf> <r:@R>
+        => wrap(BinOp(op, Box::new(e1), Box::new(e2)), (l, r)),
+
+    // = <> < > <= >=
+    #[precedence(level="5")]
+    #[assoc(side="left")]
+    <l:@L> <e1:AboveIf> <op:BooleanBinOp> <e2:AboveIf> <r:@R>
+        => wrap(BinOp(op, Box::new(e1), Box::new(e2)), (l, r)),
+
+    // .() <-
+    #[precedence(level="6")]
+    <l:@L> <e1:SimpleExpr> "." "(" <e2:Expr> ")" "<-" <e3:If> <r:@R>
+        => wrap(Set(Box::new(e1), Box::new(e2), Box::new(e3)), (l, r)),
+}
+
+If: Expr<'input> = {
+    AboveIf,
+    // if (restricted)
+    <l:@L> "if" <e1:Expr> "then" <e2:Expr> "else" <e3:If> <r:@R>
+        => wrap(If(Box::new(e1), Box::new(e2), Box::new(e3)), (l, r)),
+}
+
+// trick, 'let ...' has lowest prec but begins with the keyword "let"
+// which distinguishs them from Expr -> Expr ';' Expr
+BelowIf: Expr<'input> = {
+    If,
+    <l:@L> "let" <e:LetFollows> <r:@R>
+        => wrap(Let(e), (l, r)),
+    // if (complement)
+    <l1:@L> "if" <e1:Expr> "then" <e2:Expr> "else"
+        <l2:@L> "let" <e3:LetFollows> <r:@R>
+        => wrap(If(
+            Box::new(e1),
+            Box::new(e2),
+            Box::new(wrap(Let(e3), (l2, r)))
+        ), (l1, r)),
+}
+
+LetFollows: LetKind<'input> = {
+    <x:Ident> "=" <e1:Expr> "in" <e2:Expr>
+        => LetVar(VarDef::intro_tyvar(x), Box::new(e1), Box::new(e2)),
+
+    "rec" <x:Ident> <arg:FormalArgs> "=" <e1:Expr> "in" <e2:Expr>
+        => LetRec(FunDef::new(x, arg, Box::new(e1)), Box::new(e2)),
+
+    "(" <p:Pat> ")" "=" <e1:Expr> "in" <e2:Expr>
+        => LetTuple(p.into_iter().map(VarDef::intro_tyvar).collect(), Box::new(e1), Box::new(e2)),
+}
+
+SemiSeq: Expr<'input> = {
+    BelowIf,
+    <l:@L> <e1:If> ";" <e2:SemiSeq> <r:@R> => wrap(
+        Then(Box::new(e1), Box::new(e2)),
+        (l, r)
+    ),
+}
+
+pub Expr: Expr<'input> = SemiSeq;
+
+FormalArgs: Vec<Ident<'input>> = {
+    <mut a:FormalArgs> <i:Ident> => {
+        a.push(i);
+        a
+    },
+    Ident => vec![<>],
+}
+
+ActualArgs: Vec<Expr<'input>> = {
+    <mut a:ActualArgs> <s:SimpleExpr> => {
+        a.push(s);
+        a
+    },
+    SimpleExpr => vec![<>],
+}
+
+Elems: Vec<Expr<'input>> = {
+    <mut a:Elems> "," <i:Expr> => {
+        a.push(i);
+        a
+    },
+    <i1:Expr> "," <i2:Expr> => vec![i1, i2],
+}
+
+Pat: Vec<Ident<'input>> = {
+    <mut a:Pat> "," <i:Ident> => {
+        a.push(i);
+        a
+    },
+    <i1:Ident> "," <i2:Ident> => vec![i1, i2],
+}

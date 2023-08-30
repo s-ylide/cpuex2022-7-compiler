@@ -1,0 +1,9 @@
+[package]
+name = "ast"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+span.workspace = true
+ty.workspace = true
+ordered-float.workspace = true

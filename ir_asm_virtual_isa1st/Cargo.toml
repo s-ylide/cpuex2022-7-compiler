@@ -1,0 +1,25 @@
+[package]
+name = "ir_asm_virtual_isa1st"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+isa_2nd = []
+
+[dependencies]
+typedefs.workspace = true
+ast.workspace = true
+ty.workspace = true
+pervasives.workspace = true
+ir_knorm.workspace = true
+ir_closure.workspace = true
+ir_asm_ast_isa1st.workspace = true
+ir_asm_virtual_ast_isa1st.workspace = true
+bitvec.workspace = true
+multimap.workspace = true
+rayon.workspace = true
+itertools.workspace = true
+once_cell.workspace = true
+log.workspace = true
+util.workspace = true
+ordered-float.workspace = true

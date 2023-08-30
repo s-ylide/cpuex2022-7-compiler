@@ -1,0 +1,16 @@
+[package]
+name = "ir_asm_parser_isa1st"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+isa_2nd = []
+
+[dependencies]
+typedefs.workspace = true
+span.workspace = true
+ir_asm_ast_isa1st.workspace = true
+peg.workspace = true
+thiserror.workspace = true
+once_cell.workspace = true
+log.workspace = true

@@ -1,0 +1,16 @@
+[package]
+name = "ir_asm_virtual_ast_isa1st"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+typedefs.workspace = true
+ast.workspace = true
+ty.workspace = true
+ir_asm_ast_isa1st.workspace = true
+pervasives.workspace = true
+util.workspace = true
+smallvec.workspace = true
+ordered-float.workspace = true

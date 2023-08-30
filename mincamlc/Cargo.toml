@@ -1,0 +1,46 @@
+[package]
+name = "mincamlc"
+version = "0.1.0"
+edition = "2021"
+default-run = "mincamlc"
+autobins = false
+
+[features]
+default = ["remove_unused_store", "create_loop"]
+create_loop = ["ir_knorm/inline_once"]
+inline_all = ["create_loop", "ir_knorm/inline_all"]
+remove_unused_store = []
+isa_2nd = [
+  "bingen_isa1st/isa_2nd",
+  "ir_asm_ast_isa1st/isa_2nd",
+  "ir_asm_parser_isa1st/isa_2nd",
+  "ir_asm_virtual_isa1st/isa_2nd",
+  "ir_typed_ast/isa_2nd",
+]
+
+[dependencies]
+parser.workspace = true
+typing.workspace = true
+ir_typed_ast.workspace = true
+ir_knorm.workspace = true
+ir_closure.workspace = true
+bingen_isa1st.workspace = true
+ir_asm_ast_isa1st.workspace = true
+ir_asm_parser_isa1st.workspace = true
+ir_asm_virtual_isa1st.workspace = true
+debug_symbol.workspace = true
+serde_json.workspace = true
+pervasives.workspace = true
+annotate-snippets.workspace = true
+thiserror.workspace = true
+clap.workspace = true
+env_logger.workspace = true
+log.workspace = true
+
+[[bin]]
+name = "mincamlc"
+path = "src/main.rs"
+
+[[bin]]
+name = "as"
+path = "src/assemble.rs"

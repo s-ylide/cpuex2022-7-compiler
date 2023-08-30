@@ -1,0 +1,16 @@
+[package]
+name = "bingen_isa1st"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+isa_2nd = []
+
+[dependencies]
+typedefs.workspace = true
+ir_asm_ast_isa1st.workspace = true
+ir_asm_virtual_isa1st.workspace = true
+debug_symbol.workspace = true
+smallvec.workspace = true
+once_cell.workspace = true
+cfg-if.workspace = true

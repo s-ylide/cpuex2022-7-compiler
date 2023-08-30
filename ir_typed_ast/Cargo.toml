@@ -1,0 +1,16 @@
+[package]
+name = "ir_typed_ast"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+isa_2nd = []
+
+[dependencies]
+parser.workspace = true
+ast.workspace = true
+ty.workspace = true
+span.workspace = true
+typing.workspace = true
+log.workspace = true
+ordered-float.workspace = true

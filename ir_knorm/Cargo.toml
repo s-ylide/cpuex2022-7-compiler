@@ -1,0 +1,21 @@
+[package]
+name = "ir_knorm"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+default = []
+inline_once = []
+inline_all = []
+
+[dependencies]
+typedefs.workspace = true
+pervasives.workspace = true
+span.workspace = true
+ast.workspace = true
+ir_typed_ast.workspace = true
+ty.workspace = true
+log.workspace = true
+util.workspace = true
+bitvec.workspace = true
+ordered-float.workspace = true

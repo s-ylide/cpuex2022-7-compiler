@@ -1,0 +1,14 @@
+[package]
+name = "ir_asm_ast_isa1st"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+isa_2nd = []
+
+[dependencies]
+ast.workspace = true
+ty.workspace = true
+once_cell.workspace = true
+ordered-float.workspace = true
+cfg-if.workspace = true

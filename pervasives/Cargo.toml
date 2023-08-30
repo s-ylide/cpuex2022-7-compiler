@@ -1,0 +1,15 @@
+[package]
+name = "pervasives"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+once_cell.workspace = true
+typedefs.workspace = true
+parser.workspace = true
+ast.workspace = true
+ty.workspace = true
+ir_asm_ast_isa1st.workspace = true
+ir_asm_parser_isa1st.workspace = true

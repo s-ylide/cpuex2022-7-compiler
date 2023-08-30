@@ -1,0 +1,15 @@
+[package]
+name = "parser"
+version = "0.1.0"
+edition = "2021"
+
+[build-dependencies]
+lalrpop.workspace = true
+
+[dependencies]
+ast.workspace = true
+span.workspace = true
+lalrpop-util.workspace = true
+plex.workspace = true
+thiserror.workspace = true
+ordered-float.workspace = true
